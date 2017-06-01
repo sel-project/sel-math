@@ -1,0 +1,5 @@
+name "sel-math"
+description "Math libraries used by SEL"
+authors "sel-project"
+license "LGPL-3.0"
+targetType "library"
