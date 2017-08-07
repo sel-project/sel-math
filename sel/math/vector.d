@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (c) 2016-2017 SEL
+ * Copyright (c) 2017 SEL
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,61 +33,45 @@ struct Vector(T, char[] c) if(c.length > 1 && areValidCoordinates(c)) {
 	
 	public alias Type = T;
 	public alias coordinates = c;
-	
+
 	mixin("alias Tuple = std.typecons.Tuple!(T, \"" ~ join(coordinates.idup.split(""), "\", T, \"") ~ "\");");
 	
 	mixin("public enum coords = TypeTuple!('" ~ join(coordinates.idup.split(""), "','") ~ "');");
 	
 	enum bool isFloatingPoint = isFloatingPointTrait!T;
 	
-	private Tuple value;
-	
-	mixin((){
-		string ret;
-		foreach(immutable c ; coords) {
-			ret ~= "public pure nothrow @property @safe @nogc T " ~ c ~ "(){ return this.value." ~ c ~ "; }";
-		}
-		return ret;
-	}());
+	//private Tuple value;
+
+	union {
+
+		Tuple value;
+		struct { mixin("T " ~ join(coordinates.idup.split(""), ";T ") ~ ";"); }
+		T[c.length] array;
+
+	}
+
+	alias tuple = value;
 	
 	public pure nothrow @safe @nogc this(Tuple value) {
 		this.value = value;
 	}
 	
 	public pure nothrow @safe @nogc this(T value) {
-		foreach(immutable c ; coords) {
-			mixin("this.value." ~ c) = value;
+		this.array = value;
+	}
+	
+	public @safe this(E...)(E args) if(E.length == coordinates.length) {
+		foreach(i, value; args) {
+			this.array[i] = value;
 		}
 	}
 	
-	public @safe this(F...)(F args) if(F.length == coordinates.length) {
-		foreach(i, immutable c; coords) {
-			mixin("this.value." ~ c) = cast(T)args[i];
-		}
+	public @safe @nogc this(T[coords.length] array) {
+		this.array = array;
 	}
 	
-	public @safe @nogc this(T[coords.length] variables) {
-		foreach(i, immutable c; coords) {
-			mixin("this.value." ~ c) = variables[i];
-		}
-	}
-	
-	public @safe @nogc this(T[] variables) {
-		foreach(i, immutable c; coords) {
-			mixin("this.value." ~ c) = variables[i];
-		}
-	}
-	
-	/**
-	 * Gets the vector as a constant tuple.
-	 * Example:
-	 * ---
-	 * auto v = vector(0, 3, 4);
-	 * assert(v.tuple == typeof(v).Tuple(0, 3, 4));
-	 * ---
-	 */
-	public pure nothrow @property @safe @nogc const(Tuple) tuple() {
-		return this.value;
+	public @safe @nogc this(T[] array) {
+		this.array = array;
 	}
 	
 	/**
@@ -462,6 +446,13 @@ public pure nothrow @safe Vector!(CommonType!(A, B), coords) cross(A, B, char[] 
 unittest {
 	
 	Vector3!int v3 = Vector3!int(-1, 0, 12);
+
+	// storage
+	assert(v3.x == -1);
+	assert(v3.y == 0);
+	assert(v3.z == 12);
+	assert(v3.tuple == Vector3!int.Tuple(-1, 0, 12));
+	assert(v3.array == [-1, 0, 12]);
 	
 	// comparing
 	assert(v3.x == -1);
