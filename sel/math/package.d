@@ -12,6 +12,12 @@
  * See the GNU Lesser General Public License for more details.
  * 
  */
+/**
+ * Copyright: 2017-2018 sel-project
+ * License: LGPL-3.0
+ * Authors: Kripth
+ * Source: $(HTTP github.com/sel-project/sel-math/sel/math/package.d, sel/math/package.d)
+ */
 module sel.math;
 
 public import sel.math.vector;
