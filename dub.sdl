@@ -6,3 +6,5 @@ license "MIT"
 targetType "library"
 importPaths "."
 sourcePaths "."
+
+dflags "-op"
