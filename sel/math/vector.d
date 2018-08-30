@@ -24,9 +24,10 @@ import std.algorithm : reverse, canFind;
 import std.array : join, split;
 import std.conv : to, ConvException;
 static import std.math;
+import std.meta : staticIndexOf;
 import std.range.primitives : ElementType;
 import std.string : replace;
-import std.traits : IntegralTypeOf, staticIndexOf, isNumeric, isArray, CommonType, isFloatingPointTrait = isFloatingPoint, isImplicitlyConvertible;
+import std.traits : IntegralTypeOf, isNumeric, isArray, CommonType, isFloatingPointTrait = isFloatingPoint, isImplicitlyConvertible;
 import std.typecons : isTuple;
 import std.typetuple : TypeTuple;
 
@@ -58,25 +59,25 @@ struct Vector(T, char[] c) if(c.length > 1 && areValidCoordinates(c)) {
 
 	alias tuple = value;
 	
-	public pure nothrow @safe @nogc this(Tuple value) {
+	public pure nothrow @safe @nogc this(in Tuple value) {
 		this.value = value;
 	}
 	
-	public pure nothrow @safe @nogc this(T value) {
+	public pure nothrow @safe @nogc this(in T value) {
 		this.array = value;
 	}
 	
-	public @safe this(E...)(E args) if(E.length == coordinates.length) {
+	public @safe this(E...)(in E args) if(E.length == coordinates.length) {
 		foreach(i, value; args) {
 			this.array[i] = value;
 		}
 	}
 	
-	public @safe @nogc this(T[coords.length] array) {
+	public @safe @nogc this(in T[coords.length] array) {
 		this.array = array;
 	}
 	
-	public @safe @nogc this(T[] array) {
+	public @safe @nogc this(in T[] array) {
 		this.array = array;
 	}
 	
@@ -93,14 +94,14 @@ struct Vector(T, char[] c) if(c.length > 1 && areValidCoordinates(c)) {
 	 * assert(vector(float.nan, float.nan) != vector(float.nan, float.nan));
 	 * ---
 	 */
-	public bool opEquals(F)(F value) {
+	public bool opEquals(F)(in F value) inout {
 		static if(isVector!F && coords == F.coords) return this.opEqualsImpl!"this.{c}==value.{c}"(value);
 		else static if(isArray!F) return value.length == coords.length && this.opEqualsImpl!"this.{c}==value[{i}]"(value);
 		else static if(__traits(compiles, T.init == F.init)) return this.opEqualsImpl!"this.{c}==value"(value);
 		else return false;
 	}
 	
-	private bool opEqualsImpl(string op, F)(F value) {
+	private bool opEqualsImpl(string op, F)(F value) inout {
 		mixin((){
 				string[] ret;
 				foreach(i, immutable c; coords) {
@@ -109,6 +110,11 @@ struct Vector(T, char[] c) if(c.length > 1 && areValidCoordinates(c)) {
 				return "return " ~ ret.join("&&") ~ ";";
 			}());
 	}
+
+	// for associative arrays key
+	/*public bool opEquals(ref const Vector) const {
+		return false;
+	}*/
 	
 	/**
 	 * Performs an unary operation on the vector.
@@ -142,11 +148,11 @@ struct Vector(T, char[] c) if(c.length > 1 && areValidCoordinates(c)) {
 	 * assert(1 - vector(100, 0, -100) == vector(-99, 1, 101));
 	 * ---
 	 */
-	public typeof(this) opBinary(string op, F)(F value) if(op != "in") {
+	public typeof(this) opBinary(string op, F)(F value) inout if(op != "in") {
 		return this.dup.opOpAssign!op(value);
 	}
 	
-	public typeof(this) opBinaryRight(string op, F)(F value) if(op != "in" && __traits(compiles, typeof(this)(value))) {
+	public typeof(this) opBinaryRight(string op, F)(F value) inout if(op != "in" && __traits(compiles, typeof(this)(value))) {
 		return typeof(this)(value).opBinary!op(this);
 	}
 	
@@ -195,7 +201,7 @@ struct Vector(T, char[] c) if(c.length > 1 && areValidCoordinates(c)) {
 	 * assert(cast(Vector2!int
 	 * ---
 	 */
-	public @safe auto opCast(F)() if(isVector!F) {
+	public @safe auto opCast(F)() inout if(isVector!F) {
 		static if(is(T == F) && coordinates == F.coordinates) {
 			return this;
 		} else {
@@ -217,7 +223,7 @@ struct Vector(T, char[] c) if(c.length > 1 && areValidCoordinates(c)) {
 	 * assert(cast(long[])vector(.1, 1.5, -.1) == [0L, 1L, 0L]);
 	 * ---
 	 */
-	public @safe auto opCast(F)() if(isArray!F) {
+	public @safe auto opCast(F)() inout if(isArray!F) {
 		F array = new typeof(F.init[0])[coords.length];
 		foreach(i, coord; coords) {
 			array[i] = to!(typeof(F.init[0]))(mixin("this." ~ coord));
@@ -228,7 +234,7 @@ struct Vector(T, char[] c) if(c.length > 1 && areValidCoordinates(c)) {
 	/**
 	 * Changes the vector's type.
 	 */
-	public auto type(F)() if(isImplicitlyConvertible!(F, T)) {
+	public auto type(F)() inout if(isImplicitlyConvertible!(F, T)) {
 		Vector!(F, coordinates) ret;
 		foreach(immutable c ; coords) {
 			mixin("ret.value." ~ c) = mixin("this." ~ c);
@@ -249,7 +255,7 @@ struct Vector(T, char[] c) if(c.length > 1 && areValidCoordinates(c)) {
 	/**
 	 * Gets the vector's length.
 	 */
-	public @property double length() {
+	public @property double length() inout {
 		double length = 0;
 		foreach(immutable c ; coords) {
 			length += mixin("this." ~ c) ^^ 2;
@@ -276,7 +282,7 @@ struct Vector(T, char[] c) if(c.length > 1 && areValidCoordinates(c)) {
 	/**
 	 * Converts the vector into a string for logging and debugging purposes.
 	 */
-	public string toString() {
+	public string toString() inout {
 		string[] cs;
 		foreach(i, coord; coords) {
 			cs ~= to!string(mixin("this." ~ coord));
@@ -510,5 +516,10 @@ unittest {
 	// distance
 	assert(distance(vector(0, 0), vector(0, 1)) == 1);
 	assert(distance(vector(0, 0, 0), vector(1, 1, 1)) == 3 ^^ .5);
+
+	// as associative array key
+	uint[Vector2!int] aa;
+	aa[Vector2!int(1, 2)] = 4;
+	assert(aa[Vector2!int(1, 2)] == 4);
 	
 }
