@@ -1,7 +1,7 @@
 name "sel-math"
 description "Math library for voxel games"
 authors "sel-project"
-copyright "Copyright (c) 2017-2018 sel-project"
+copyright "Copyright (c) 2017-2019 sel-project"
 license "MIT"
 targetType "library"
 importPaths "."
