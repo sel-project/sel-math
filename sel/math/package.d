@@ -13,7 +13,7 @@
  * 
  */
 /**
- * Copyright: Copyright (c) 2017-2019 sel-project
+ * Copyright: Copyright (c) 2017-2020 sel-project
  * License: MIT
  * Authors: Kripth
  * Source: $(HTTP github.com/sel-project/sel-math/sel/math/package.d, sel/math/package.d)
